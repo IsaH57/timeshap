@@ -47,6 +47,7 @@ def plot_feat_barplot(feat_data: pd.DataFrame,
         #sorted_df = feat_data.sort_values('sort_col', ascending=False)
         #cutoff_contribution = abs(sorted_df.iloc[4]['Shapley Value'])
         #feat_data = feat_data[np.logical_or(feat_data['Explanation'] >= cutoff_contribution, feat_data['Explanation'] <= -cutoff_contribution)]
+        
         # THIS WAS IMPLEMENTED BY US
         sorted_df = feat_data.sort_values('sort_col', ascending=False)
         # use top_x_feats consistently (guard in case top_x_feats > rows)
@@ -61,8 +62,8 @@ def plot_feat_barplot(feat_data: pd.DataFrame,
                                          titleFontSize=15, titleX=-61),
                 sort=alt.SortField(field='sort_col', order='descending')),
         x=alt.X('Shapley Value', axis=alt.Axis(grid=True, title="Shapley Value",
-                                            labelFontSize=15, titleFontSize=15),
-                scale=alt.Scale(domain=[-0.1, 0.4])),
+                                            labelFontSize=15, titleFontSize=15),)
+                #scale=alt.Scale(domain=[-0.1, 0.4])),
     )
 
     line = alt.Chart(pd.DataFrame({'x': [0]})).mark_rule(
