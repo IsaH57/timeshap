@@ -44,17 +44,9 @@ def plot_feat_barplot(feat_data: pd.DataFrame,
     feat_data['sort_col'] = feat_data['Shapley Value'].apply(lambda x: abs(x))
 
     if top_x_feats is not None and feat_data.shape[0] > top_x_feats:
-        #sorted_df = feat_data.sort_values('sort_col', ascending=False)
-        #cutoff_contribution = abs(sorted_df.iloc[4]['Shapley Value'])
-        #feat_data = feat_data[np.logical_or(feat_data['Explanation'] >= cutoff_contribution, feat_data['Explanation'] <= -cutoff_contribution)]
-        
-        # THIS WAS IMPLEMENTED BY US
         sorted_df = feat_data.sort_values('sort_col', ascending=False)
-        # use top_x_feats consistently (guard in case top_x_feats > rows)
         cutoff_idx = min(top_x_feats - 1, sorted_df.shape[0] - 1)
-        # sort_col already holds abs(Shapley Value)
         cutoff_contribution = sorted_df['sort_col'].iloc[cutoff_idx]
-        # filter by the same metric (sort_col) to keep top_x_feats (or ties)
         feat_data = feat_data[feat_data['sort_col'] >= cutoff_contribution]
 
     a = alt.Chart(feat_data).mark_bar(size=15, thickness=1).encode(
@@ -62,8 +54,12 @@ def plot_feat_barplot(feat_data: pd.DataFrame,
                                          titleFontSize=15, titleX=-61),
                 sort=alt.SortField(field='sort_col', order='descending')),
         x=alt.X('Shapley Value', axis=alt.Axis(grid=True, title="Shapley Value",
-                                            labelFontSize=15, titleFontSize=15),)
-                #scale=alt.Scale(domain=[-0.1, 0.4])),
+                                            labelFontSize=15, titleFontSize=15)),
+        color=alt.condition(
+            alt.datum['Shapley Value'] > 0,
+            alt.value('#ff0d57'),  # Red for positive
+            alt.value('#1e88e5')   # Blue for negative
+        )
     )
 
     line = alt.Chart(pd.DataFrame({'x': [0]})).mark_rule(
