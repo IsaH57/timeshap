@@ -46,12 +46,11 @@ def plot_cell_level(cell_data: pd.DataFrame,
             'axis_lims': plot Y domain, default [-0.5, 0.5]
             'FontSize': plot font size, default 15
     """
-    c_range = ["#5f8fd6",
-               "#99c3fb",
-               "#f5f5f5",
-               "#ffaa92",
-               "#d16f5b",
-               ]
+    c_range = ["#1e88e5",  # blue
+           "#8eb9f3",  # Light blue
+           "#f7f7f7",  # Off-white
+           "#ff8ba1",  # Light red
+           "#ff0d57"]  # red
     unique_events = [x for x in np.unique(cell_data['Event'].values) if x not in ['Other Events', 'Pruned Events']]
     sort_events = sorted(unique_events, key=lambda x:  re.findall(r'\d+', x)[0], reverse=True)
     unique_feats = [x for x in np.unique(cell_data['Feature'].values) if x not in ['Other Features', 'Pruned Events']]

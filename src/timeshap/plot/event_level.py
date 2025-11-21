@@ -33,12 +33,11 @@ def plot_event_heatmap(event_data: pd.DataFrame,
     event_data['idx'] = event_data['Feature'].apply(lambda x: event_data.shape[0] if x == 'Pruned Events' else int(re.findall(r'\d+', x)[0]) - 1)
     event_data = event_data.sort_values('idx')[['Shapley Value', 'Feature']]
 
-    c_range = ["#5f8fd6",
-               "#99c3fb",
-               "#f5f5f5",
-               "#ffaa92",
-               "#d16f5b",
-               ]
+    c_range = ["#1e88e5",  # blue
+           "#8eb9f3",  # Light blue
+           "#f7f7f7",  # Off-white
+           "#ff8ba1",  # Light red
+           "#ff0d57"]  # red
 
     event_data['row'] = event_data['Feature'].apply(lambda x: event_data.shape[0] if x == 'Pruned Events' else -eval(x.split(':')[0][6:]))
     event_data['column'] = event_data['Feature'].apply(lambda x: 1)
