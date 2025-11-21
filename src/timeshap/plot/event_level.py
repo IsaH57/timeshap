@@ -111,24 +111,29 @@ def plot_global_event(event_data: pd.DataFrame,
 
         height = plot_parameters.get('height', 150)
         width = plot_parameters.get('width', 360)
-        axis_lims = plot_parameters.get('axis_lim', [-0.3, 0.9])
-        t_limit = plot_parameters.get('axis_lim', -20)
+        if 'axis_lim' not in plot_parameters:
+            min_val = event_data['Shapley Value'].min()
+            max_val = event_data['Shapley Value'].max()
+            margin = (max_val - min_val) * 0.1  # Add 10% margin
+            axis_lims = [min_val - margin, max_val + margin]
+        else:
+            axis_lims = plot_parameters['axis_lim']
+        t_limit = plot_parameters.get('t_limit', -20)
 
         event_data = event_data[event_data['t (event index)'] >= t_limit]
         event_data = event_data[event_data['Shapley Value'] >= axis_lims[0]]
         event_data = event_data[event_data['Shapley Value'] <= axis_lims[1]]
 
-        global_event = alt.Chart(event_data).mark_point(stroke='white',
+        global_event = alt.Chart(event_data).mark_point(filled=True,stroke='white',
                                                       strokeWidth=.6).encode(
             y=alt.Y('Shapley Value', axis=alt.Axis(grid=True, titleX=-23),
                     title="Shapley Value", scale=alt.Scale(domain=axis_lims, )),
             x=alt.X('t (event index):O', axis=alt.Axis(labelAngle=0)),
-            color=alt.Color('type',
-                            scale=alt.Scale(domain=['Shapley Value', 'Mean'],
-                                            range=["#48caaa", '#d76d58']),
-                            legend=alt.Legend(title=None, fillColor="white",
-                                              symbolStrokeWidth=0, symbolSize=50,
-                                              orient="top-left")),
+            color=alt.condition(
+                alt.datum['Shapley Value'] > 0,
+                alt.value('#ff0d57'),  # Red for positive
+                alt.value('#1e88e5')   # Blue for negative
+            ),
             opacity=alt.condition(alt.datum.type == 'Mean', alt.value(1.0),
                                   alt.value(0.2)),
             size=alt.condition(alt.datum.type == 'Mean', alt.value(70),

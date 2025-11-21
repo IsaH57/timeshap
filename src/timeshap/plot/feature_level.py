@@ -153,30 +153,38 @@ def plot_global_feat(feat_data: pd.DataFrame,
             plot_parameters = {}
         height = plot_parameters.get('height', 280)
         width = plot_parameters.get('width', 288)
-        axis_lims = plot_parameters.get('axis_lim', [-0.2, 0.6])
+        
+        # Auto-calculate axis limits if not provided
+        if 'axis_lim' not in plot_parameters:
+            min_val = feat_data['Shapley Value'].min()
+            max_val = feat_data['Shapley Value'].max()
+            margin = (max_val - min_val) * 0.1  # Add 10% margin
+            axis_lims = [min_val - margin, max_val + margin]
+        else:
+            axis_lims = plot_parameters['axis_lim']
+            
         fontsize = plot_parameters.get('FontSize', 13)
 
-        global_feats_plot = alt.Chart(feat_data).mark_point(stroke='white',
-                                                             strokeWidth=.6).encode(
+        global_feats_plot = alt.Chart(feat_data).mark_point(filled=True,stroke='white',
+                                                     strokeWidth=.6).encode(
             x=alt.X('Shapley Value', axis=alt.Axis(title='Shapley Value', grid=True),
-                    scale=alt.Scale(domain=axis_lims)),
+                scale=alt.Scale(domain=axis_lims)),
             y=alt.Y('Feature:O',
-                    sort=sort_features,
-                    axis=alt.Axis(labelFontSize=fontsize, titleX=-51)),
-            color=alt.Color('type',
-                            scale=alt.Scale(domain=['Shapley Value', 'Mean'],
-                                            range=["#618FE0", '#d76d58']),
-                            legend=alt.Legend(title=None, fillColor="white",
-                                              symbolStrokeWidth=0, symbolSize=50,
-                                              orient="bottom-right")),
+                sort=sort_features,
+                axis=alt.Axis(labelFontSize=fontsize, titleX=-51)),
+            color=alt.condition(
+                alt.datum['Shapley Value'] > 0,
+                alt.value('#ff0d57'),  # Red for positive
+                alt.value('#1e88e5')   # Blue for negative
+            ),
             opacity=alt.condition(alt.datum.type == 'Mean', alt.value(1.0),
-                                  alt.value(0.1)),
+                          alt.value(0.1)),
             size=alt.condition(alt.datum.type == 'Mean', alt.value(70),
-                               alt.value(30)),
+                       alt.value(30)),
         ).properties(
             width=width,
-            height=height
-        )
+            height=height   
+        )   
         return global_feats_plot
 
     return multi_plot_wrapper(feat_data, plot, (top_x_feats, threshold, plot_features, plot_parameters))
