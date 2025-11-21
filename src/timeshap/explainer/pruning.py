@@ -318,47 +318,7 @@ def prune_all(f: Callable,
               verbose: bool = False,
               ) -> pd.DataFrame:
     """Applies pruning to a dataset
-
-    Parameters
-    ----------
-    f: Callable[[np.ndarray], np.ndarray]
-        Point of entry for model being explained.
-        This method receives a 3-D np.ndarray (#samples, #seq_len, #features).
-        This method returns a 2-D np.ndarray (#samples, 1).
-
-    data: Union[pd.DataFrame, np.array]
-        Sequence to explain.
-
-    pruning_dict: dict
-        Information required for pruning algorithm
-
-    baseline: Union[np.ndarray, pd.DataFrame],
-        Dataset baseline. Median/Mean of numerical features and mode of categorical.
-        In case of np.array feature are assumed to be in order with `model_features`.
-        The baseline can be an average event or an average sequence
-
-    model_features: List[str]
-        In-order list of features to select and input to the model
-
-    schema: List[str]
-        Schema of provided data
-
-    entity_col: str
-        Column that contains the sequence identifiers
-
-    time_col: str
-        Data column that represents the time feature in order to sort sequences
-        temporally
-
-    append_to_files: bool
-        Append explanations to files if file already exists
-
-    verbose: bool
-        If process is verbose
-
-    Returns
-    -------
-    pd.DataFrame
+    ...
     """
     if schema is None and isinstance(data, pd.DataFrame):
         schema = list(data.columns)
@@ -371,20 +331,14 @@ def prune_all(f: Callable,
         prun_data = pd.read_csv(file_path)
         make_predictions = False
 
-        # TODO resume explanations for missing entities
-        # necessary_entities = set(np.unique(data[entity_col].values))
-        # loaded_csv = pd.read_csv(file_path)
-        # present_entities = set(np.unique(loaded_csv[entity_col].values))
-        # if necessary_entities.issubset(present_entities):
-        #     make_predictions = False
-        #     prun_data = loaded_csv[loaded_csv[entity_col].isin(necessary_entities)]
-
     if make_predictions:
         ret_prun_data = []
-        names = ["Coalition", "t (event index)", "Shapley Value", entity_col if isinstance(entity_col, str) else "Entity"]
+        # Always include an Entity column in the output so downstream code (event_explain_all, calc_prun_indexes) can rely on it.
+        names = ["Coalition", "t (event index)", "Shapley Value", "Entity"]
+
         if file_path is not None:
             if os.path.exists(file_path):
-                assert append_to_files, "The defined path for pruning data already exists and the append option is turned off. If you wish to append the explanations please use the flag `append_to_files`, otherwise change the provided path."
+                assert append_to_files, "The defined path for pruning data already exists and the append option is turned off. If you wish to append the explanations please use the flag `append_to_files`"
             else:
                 if '/' in file_path:
                     Path(file_path.rsplit("/", 1)[0]).mkdir(parents=True, exist_ok=True)
@@ -398,16 +352,21 @@ def prune_all(f: Callable,
         model_features_index, entity_col_index, time_col_index = convert_to_indexes(model_features, schema, entity_col, time_col)
         data = convert_data_to_3d(data, entity_col_index, time_col_index)
 
-        for sequence in data:
+        for seq_idx, sequence in enumerate(data):
+            # Determine entity value: use the real entity when entity_col provided,
+            # otherwise use a synthetic id (sequence index).
             if entity_col is not None:
                 entity = sequence[0, 0, entity_col_index]
+            else:
+                entity = seq_idx
+
             if model_features:
                 sequence = sequence[:, :, model_features_index]
             sequence = sequence.astype(np.float64)
             local_pruning_data = temp_coalition_pruning(f, sequence, baseline, None, ret_plot_data=True, verbose=verbose)
 
-            if entity_col is not None:
-                local_pruning_data["Entity"] = entity
+            # Always attach an Entity column (synthetic or real)
+            local_pruning_data["Entity"] = entity
 
             ret_prun_data.append(local_pruning_data.values)
             if file_path is not None:
